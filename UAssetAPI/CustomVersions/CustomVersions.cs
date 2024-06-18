@@ -564,6 +564,98 @@ namespace UAssetAPI.CustomVersions
         [Introduced(EngineVersion.VER_UE5_4)]
         SkeletalHalfEdgeData,
 
+        // Binding extensions for anim graph nodes
+        [Introduced(EngineVersion.VER_UE5_4)]
+        AnimGraphNodeBindingExtensions,
+
+        // Function data stores a map from work to debug operands
+        [Introduced(EngineVersion.VER_UE5_4)]
+        RigVMSaveDebugMapInGraphFunctionData,
+
+        // Fix missing binding extensions for some anim graph nodes
+        [Introduced(EngineVersion.VER_UE5_4)]
+        FixMissingAnimGraphNodeBindingExtensions,
+
+        // EditableWhenInherited: Skip custom serialization on non Archetypes
+        [Introduced(EngineVersion.VER_UE5_4)]
+        ISMComponentEditableWhenInheritedSkipSerialization,
+
+        // GrassTypes are now per-component, rather than per-landscape proxy :
+        [Introduced(EngineVersion.VER_UE5_4)]
+        LandscapeSupportPerComponentGrassTypes,
+
+        // World partition actor data layers activation logic operator support defaults for old maps
+        [Introduced(EngineVersion.VER_UE5_4)]
+        WorldPartitionDataLayersLogicOperatorAdded,
+
+        // Started sorting Possessables, Spawnables, and MovieSceneBindings for better search performance.
+        [Introduced(EngineVersion.VER_UE5_4)]
+        MovieSceneSortedBindings,
+
+        // Remove the UAnimCurveCompressionCodec::InstanceGuid which causes cook determinism issues
+        [Introduced(EngineVersion.VER_UE5_4)]
+        RemoveAnimCurveCompressionCodecInstanceGuid,
+
+        // Serialize the source HLOD Layer for HLOD actor descriptors.
+        [Introduced(EngineVersion.VER_UE5_4)]
+        WorldPartitionHLODActorDescSerializeSourceHLODLayer,
+
+        // Serialize custom editor bounds for HLOD actor descriptors.
+        [Introduced(EngineVersion.VER_UE5_4)]
+        WorldPartitionHLODActorDescSerializeEditorBounds,
+
+        // Changed default Local Exposure Contrast from 1.0 to 0.8 (reverted)
+        [Introduced(EngineVersion.VER_UE5_4)]
+        LocalExposureDefaultChangeFrom1_Reverted,
+
+        // Added support of external packaging of Data Layer Instances
+        [Introduced(EngineVersion.VER_UE5_4)]
+        AddDataLayerInstanceExternalPackage,
+
+        // Update paths to keep a flag if they are the widget BP
+        [Introduced(EngineVersion.VER_UE5_4)]
+        MVVMPropertyPathSelf,
+
+        // Enabled ObjectPtr property serialization for Dataflow nodes
+        [Introduced(EngineVersion.VER_UE5_4)]
+        AddDataflowObjectSerialization,
+
+        // Add anim notify rate scaling, defaults to on for new content, off for old content
+        [Introduced(EngineVersion.VER_UE5_4)]
+        AnimNotifyAddRateScale,
+
+        // Fix tangents for non-uniform build scales, and add a flag to optionally match the previous (incorrect) tangents
+        [Introduced(EngineVersion.VER_UE5_4)]
+        FixedTangentTransformForNonuniformBuildScale,
+
+        // AnimNode Layers will now start in a Shared Group, instead of being each one on a different group at runtime
+        [Introduced(EngineVersion.VER_UE5_4)]
+        AnimNodeRootDefaultGroupChange,
+
+        // Move AnimNext graphs to sub-entries of assets
+        [Introduced(EngineVersion.VER_UE5_4)]
+        AnimNextMoveGraphsToEntries,
+
+        // Removed debug information containing compressed data author, time etc. from animation DDC data as it introduces indeterminism
+        [Introduced(EngineVersion.VER_UE5_4)]
+        AnimationSequenceCompressedDataRemoveDebugData,
+
+        // Changes to Orthographic Camera default settings
+        [Introduced(EngineVersion.VER_UE5_4)]
+        OrthographicCameraDefaultSettings,
+
+        // Added settings to Landscape HLODs
+        [Introduced(EngineVersion.VER_UE5_4)]
+        LandscapeAddedHLODSettings,
+
+        // Skeletal Mesh uses Mesh Description to store mesh bulk data.
+        [Introduced(EngineVersion.VER_UE5_4)]
+        MeshDescriptionForSkeletalMesh,
+
+        // Skeletal Mesh optionally cooks half edge data per lod
+        [Introduced(EngineVersion.VER_UE5_4)]
+        SkeletalHalfEdgeData,
+
         [Introduced(EngineVersion.VER_UE4_AUTOMATIC_VERSION_PLUS_ONE)]
         VersionPlusOne,
         [Introduced(EngineVersion.VER_UE4_AUTOMATIC_VERSION)]
