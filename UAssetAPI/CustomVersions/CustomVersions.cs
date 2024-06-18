@@ -256,8 +256,8 @@ namespace UAssetAPI.CustomVersions
         [Introduced(EngineVersion.VER_UE5_0)]
         TTerrainLayerWeightsAreNotParameters,
 
-        // Anim Dynamics Node Gravity Override vector is now defined in world space, not simulation space. 
-        // Legacy behavior can be maintained with a flag, which is set false by default for new nodes, 
+        // Anim Dynamics Node Gravity Override vector is now defined in world space, not simulation space.
+        // Legacy behavior can be maintained with a flag, which is set false by default for new nodes,
         // true for nodes predating this change.
         [Introduced(EngineVersion.VER_UE5_0)]
         GravityOverrideDefinedInWorldSpace,
@@ -1284,7 +1284,7 @@ namespace UAssetAPI.CustomVersions
 
         /// <summary>Added Extension to AssetPackageData.</summary>
         [Introduced(EngineVersion.VER_UE4_OLDEST_LOADABLE_PACKAGE)]
-        AssetPackageDataHasExtension,		
+        AssetPackageDataHasExtension,
 
         [Introduced(EngineVersion.VER_UE4_AUTOMATIC_VERSION_PLUS_ONE)]
         VersionPlusOne,

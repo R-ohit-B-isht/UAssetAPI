@@ -74,6 +74,8 @@ namespace UAssetAPI
         public uint Changelist;
         /// <summary>Branch name.</summary>
         public FString Branch;
+        /// <summary>Build ID. This is a new field introduced in Unreal Engine 5.3.</summary>
+        public FString BuildId;
 
         public void Write(UnrealBinaryWriter writer)
         {
@@ -82,6 +84,7 @@ namespace UAssetAPI
             writer.Write(Patch);
             writer.Write(Changelist);
             writer.Write(Branch);
+            writer.Write(BuildId);
         }
 
         public FEngineVersion(UnrealBinaryReader reader)
@@ -91,15 +94,17 @@ namespace UAssetAPI
             Patch = reader.ReadUInt16();
             Changelist = reader.ReadUInt32();
             Branch = reader.ReadFString();
+            BuildId = reader.ReadFString();
         }
 
-        public FEngineVersion(ushort major, ushort minor, ushort patch, uint changelist, FString branch)
+        public FEngineVersion(ushort major, ushort minor, ushort patch, uint changelist, FString branch, FString buildId)
         {
             Major = major;
             Minor = minor;
             Patch = patch;
             Changelist = changelist;
             Branch = branch;
+            BuildId = buildId;
         }
     }
 
@@ -665,7 +670,7 @@ namespace UAssetAPI
 
             if (!IsFilterEditorOnly)
             {
-                PersistentGuid = ObjectVersion >= ObjectVersion.VER_UE4_ADDED_PACKAGE_OWNER 
+                PersistentGuid = ObjectVersion >= ObjectVersion.VER_UE4_ADDED_PACKAGE_OWNER
                     ? new Guid(reader.ReadBytes(16))
                     : PackageGuid;
 
@@ -790,7 +795,7 @@ namespace UAssetAPI
                 {
                     OverrideNameMapHashes[nameInMap] = 0;
                 }
-                else if (hashes >> 16 == 0 && nameInMap.Value == nameInMap.Value.ToLowerInvariant()) // WITH_CASE_PRESERVING_NAME = 0; if pre-4.23, do not serialize CasePreservingHash 
+                else if (hashes >> 16 == 0 && nameInMap.Value == nameInMap.Value.ToLowerInvariant()) // WITH_CASE_PRESERVING_NAME = 0; if pre-4.23, do not serialize CasePreservingHash
                 {
                     nameInMap.IsCasePreserving = false;
                 }
