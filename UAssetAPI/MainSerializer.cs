@@ -331,7 +331,7 @@ namespace UAssetAPI
                 {
                     data.Read(reader, includeHeader, leng);
                 }
-                catch (Exception ex)
+                catch
                 {
                     // if asset is unversioned, bubble the error up to make the whole export fail
                     // because unversioned headers aren't properly reconstructed currently
