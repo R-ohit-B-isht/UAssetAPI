@@ -2,10 +2,10 @@
   <PropertyGroup>
     <ProjectGuid>{A74E7E85-1797-477C-AEC1-583AE7D109D0}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <AssemblyTitle>UAssetAPI.Benchmark</AssemblyTitle>
-    <Product>UAssetAPI.Benchmark</Product>
+    <Product>UAssetAPI.Benchmark</AssemblyTitle>
     <Copyright>Copyright © Atenfyr 2023</Copyright>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <Configurations>Debug;Release;Debug Verbose</Configurations>
