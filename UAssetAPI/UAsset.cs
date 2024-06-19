@@ -749,6 +749,16 @@ namespace UAssetAPI
             if (numAdditionalPackagesToCook < 0 || numAdditionalPackagesToCook > 100000) // Adjust the upper limit as needed
             {
                 Console.WriteLine($"Invalid numAdditionalPackagesToCook value detected: {numAdditionalPackagesToCook}, Position: {reader.BaseStream.Position}");
+
+                // Read the raw bytes and interpret them in both little-endian and big-endian formats
+                reader.BaseStream.Position -= sizeof(int);
+                byte[] rawBytes = reader.ReadBytes(sizeof(int));
+                int littleEndianValue = BitConverter.ToInt32(rawBytes, 0);
+                Array.Reverse(rawBytes);
+                int bigEndianValue = BitConverter.ToInt32(rawBytes, 0);
+
+                Console.WriteLine($"Raw bytes: {BitConverter.ToString(rawBytes)}, Little-endian: {littleEndianValue}, Big-endian: {bigEndianValue}");
+
                 // Attempt to recover by setting a default value or skipping the invalid data
                 numAdditionalPackagesToCook = 0; // Set to 0 or another reasonable default value
                 // Optionally, log a warning or take other recovery actions
