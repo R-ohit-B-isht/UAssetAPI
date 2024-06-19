@@ -37,6 +37,8 @@ namespace UAssetAPI
 
         public override int ReadInt32()
         {
+            byte[] bytes = base.ReadBytes(4);
+            if (bytes.Length != 4) throw new EndOfStreamException("Unable to read 4 bytes for Int32 conversion.");
             return BitConverter.ToInt32(ReverseIfBigEndian(base.ReadBytes(4)), 0);
         }
 
@@ -208,12 +210,12 @@ namespace UAssetAPI
                     {
                         var customVersionID = new Guid(ReadBytes(16));
                         var customVersionNumber = ReadInt32();
-                        newCustomVersionContainer.Add(new CustomVersion(customVersionID, customVersionNumber));                      
+                        newCustomVersionContainer.Add(new CustomVersion(customVersionID, customVersionNumber));
                         existingCustomVersions.Add(customVersionID);
                     }
                     break;
 
-            }    
+            }
 
             if (Mappings != null && Mappings.CustomVersionContainer != null && Mappings.CustomVersionContainer.Count > 0)
             {
