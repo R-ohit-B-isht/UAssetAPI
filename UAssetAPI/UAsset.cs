@@ -749,7 +749,10 @@ namespace UAssetAPI
             if (numAdditionalPackagesToCook < 0 || numAdditionalPackagesToCook > 100000) // Adjust the upper limit as needed
             {
                 Console.WriteLine($"Invalid numAdditionalPackagesToCook value detected: {numAdditionalPackagesToCook}, Position: {reader.BaseStream.Position}");
-                throw new FormatException($"Invalid numAdditionalPackagesToCook value: {numAdditionalPackagesToCook}");
+                // Attempt to recover by setting a default value or skipping the invalid data
+                numAdditionalPackagesToCook = 0; // Set to 0 or another reasonable default value
+                // Optionally, log a warning or take other recovery actions
+                Console.WriteLine($"Recovered from invalid numAdditionalPackagesToCook value, set to default: {numAdditionalPackagesToCook}");
             }
 
             // Additional logging to capture stream state
