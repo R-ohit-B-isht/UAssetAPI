@@ -619,6 +619,7 @@ namespace UAssetAPI
             if (ObjectVersionUE5 == ObjectVersionUE5.UNKNOWN && Mappings != null && Mappings.FileVersionUE5 > 0) ObjectVersionUE5 = Mappings.FileVersionUE5;
 
             FileVersionLicenseeUE = reader.ReadInt32();
+            Console.WriteLine($"FileVersionLicenseeUE: {FileVersionLicenseeUE}, Position: {reader.BaseStream.Position}");
 
             // Custom versions container
             if (LegacyFileVersion <= -2)
@@ -627,10 +628,13 @@ namespace UAssetAPI
             }
 
             SectionSixOffset = reader.ReadInt32(); // 24
+            Console.WriteLine($"SectionSixOffset: {SectionSixOffset}, Position: {reader.BaseStream.Position}");
             FolderName = reader.ReadFString();
             PackageFlags = (EPackageFlags)reader.ReadUInt32();
             NameCount = reader.ReadInt32();
+            Console.WriteLine($"NameCount: {NameCount}, Position: {reader.BaseStream.Position}");
             NameOffset = reader.ReadInt32();
+            Console.WriteLine($"NameOffset: {NameOffset}, Position: {reader.BaseStream.Position}");
 
             if (!IsFilterEditorOnly && ObjectVersion >= ObjectVersion.VER_UE4_ADDED_PACKAGE_SUMMARY_LOCALIZATION_ID)
             {
@@ -640,29 +644,42 @@ namespace UAssetAPI
             if (ObjectVersionUE5 >= ObjectVersionUE5.ADD_SOFTOBJECTPATH_LIST)
             {
                 SoftObjectPathsCount = reader.ReadInt32();
+                Console.WriteLine($"SoftObjectPathsCount: {SoftObjectPathsCount}, Position: {reader.BaseStream.Position}");
                 SoftObjectPathsOffset = reader.ReadInt32();
+                Console.WriteLine($"SoftObjectPathsOffset: {SoftObjectPathsOffset}, Position: {reader.BaseStream.Position}");
             }
             if (ObjectVersion >= ObjectVersion.VER_UE4_SERIALIZE_TEXT_IN_PACKAGES)
             {
                 GatherableTextDataCount = reader.ReadInt32();
+                Console.WriteLine($"GatherableTextDataCount: {GatherableTextDataCount}, Position: {reader.BaseStream.Position}");
                 GatherableTextDataOffset = reader.ReadInt32();
+                Console.WriteLine($"GatherableTextDataOffset: {GatherableTextDataOffset}, Position: {reader.BaseStream.Position}");
             }
 
             ExportCount = reader.ReadInt32();
+            Console.WriteLine($"ExportCount: {ExportCount}, Position: {reader.BaseStream.Position}");
             ExportOffset = reader.ReadInt32(); // 61
+            Console.WriteLine($"ExportOffset: {ExportOffset}, Position: {reader.BaseStream.Position}");
             ImportCount = reader.ReadInt32(); // 65
+            Console.WriteLine($"ImportCount: {ImportCount}, Position: {reader.BaseStream.Position}");
             ImportOffset = reader.ReadInt32(); // 69 (haha funny)
+            Console.WriteLine($"ImportOffset: {ImportOffset}, Position: {reader.BaseStream.Position}");
             DependsOffset = reader.ReadInt32(); // 73
+            Console.WriteLine($"DependsOffset: {DependsOffset}, Position: {reader.BaseStream.Position}");
             if (ObjectVersion >= ObjectVersion.VER_UE4_ADD_STRING_ASSET_REFERENCES_MAP)
             {
                 SoftPackageReferencesCount = reader.ReadInt32(); // 77
+                Console.WriteLine($"SoftPackageReferencesCount: {SoftPackageReferencesCount}, Position: {reader.BaseStream.Position}");
                 SoftPackageReferencesOffset = reader.ReadInt32(); // 81
+                Console.WriteLine($"SoftPackageReferencesOffset: {SoftPackageReferencesOffset}, Position: {reader.BaseStream.Position}");
             }
             if (ObjectVersion >= ObjectVersion.VER_UE4_ADDED_SEARCHABLE_NAMES)
             {
                 SearchableNamesOffset = reader.ReadInt32();
+                Console.WriteLine($"SearchableNamesOffset: {SearchableNamesOffset}, Position: {reader.BaseStream.Position}");
             }
             ThumbnailTableOffset = reader.ReadInt32();
+            Console.WriteLine($"ThumbnailTableOffset: {ThumbnailTableOffset}, Position: {reader.BaseStream.Position}");
 
             // valorant garbage data is here
 
@@ -681,17 +698,21 @@ namespace UAssetAPI
 
             Generations = new List<FGenerationInfo>();
             int generationCount = reader.ReadInt32();
+            Console.WriteLine($"generationCount: {generationCount}, Position: {reader.BaseStream.Position}");
             if (generationCount < 0 || generationCount > 1e5) // failsafe for some specific games
             {
                 reader.BaseStream.Position -= sizeof(int) + 16;
                 ValorantGarbageData = reader.ReadBytes(8); // garbage data
                 PackageGuid = new Guid(reader.ReadBytes(16));
                 generationCount = reader.ReadInt32();
+                Console.WriteLine($"generationCount (after garbage data): {generationCount}, Position: {reader.BaseStream.Position}");
             }
             for (int i = 0; i < generationCount; i++)
             {
                 int genNumExports = reader.ReadInt32();
+                Console.WriteLine($"genNumExports: {genNumExports}, Position: {reader.BaseStream.Position}");
                 int genNumNames = reader.ReadInt32();
+                Console.WriteLine($"genNumNames: {genNumNames}, Position: {reader.BaseStream.Position}");
                 Generations.Add(new FGenerationInfo(genNumExports, genNumNames));
             }
 
@@ -715,12 +736,14 @@ namespace UAssetAPI
 
             CompressionFlags = reader.ReadUInt32();
             int numCompressedChunks = reader.ReadInt32();
+            Console.WriteLine($"numCompressedChunks: {numCompressedChunks}, Position: {reader.BaseStream.Position}");
             if (numCompressedChunks > 0) throw new FormatException("Asset has package-level compression and is likely too old to be parsed");
 
             PackageSource = reader.ReadUInt32();
 
             AdditionalPackagesToCook = new List<FString>();
             int numAdditionalPackagesToCook = reader.ReadInt32();
+            Console.WriteLine($"numAdditionalPackagesToCook: {numAdditionalPackagesToCook}, Position: {reader.BaseStream.Position}");
             for (int i = 0; i < numAdditionalPackagesToCook; i++)
             {
                 AdditionalPackagesToCook.Add(reader.ReadFString());
