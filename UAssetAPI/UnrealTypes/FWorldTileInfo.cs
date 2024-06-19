@@ -27,20 +27,26 @@ namespace UAssetAPI.UnrealTypes
 
         public void Read(AssetBinaryReader reader, UAsset asset)
         {
+            Console.WriteLine($"FWorldTileLayer.Read called. Stream position: {reader.BaseStream.Position}");
             Name = reader.ReadFString();
+            Console.WriteLine($"Name: {Name}, Position: {reader.BaseStream.Position}");
             Reserved0 = reader.ReadInt32();
+            Console.WriteLine($"Reserved0: {Reserved0}, Position: {reader.BaseStream.Position}");
             Reserved1 = new IntPointPropertyData(FName.DefineDummy(asset, "Reserved1"));
             Reserved1.Ancestry.Initialize(null, reader.Asset.GetParentClassExportName());
             Reserved1.Read(reader, false, 0, 0);
+            Console.WriteLine($"Reserved1: {Reserved1}, Position: {reader.BaseStream.Position}");
 
             if (asset.ObjectVersion >= ObjectVersion.VER_UE4_WORLD_LEVEL_INFO_UPDATED)
             {
                 StreamingDistance = reader.ReadInt32();
+                Console.WriteLine($"StreamingDistance: {StreamingDistance}, Position: {reader.BaseStream.Position}");
             }
 
             if (asset.ObjectVersion >= ObjectVersion.VER_UE4_WORLD_LAYER_ENABLE_DISTANCE_STREAMING)
             {
                 DistanceStreamingEnabled = reader.ReadInt32() == 1;
+                Console.WriteLine($"DistanceStreamingEnabled: {DistanceStreamingEnabled}, Position: {reader.BaseStream.Position}");
             }
         }
 
