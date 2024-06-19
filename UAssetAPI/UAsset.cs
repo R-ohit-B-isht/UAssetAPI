@@ -744,6 +744,13 @@ namespace UAssetAPI
             AdditionalPackagesToCook = new List<FString>();
             int numAdditionalPackagesToCook = reader.ReadInt32();
             Console.WriteLine($"numAdditionalPackagesToCook: {numAdditionalPackagesToCook}, Position: {reader.BaseStream.Position}");
+
+            // Validate numAdditionalPackagesToCook to ensure it is within a reasonable range
+            if (numAdditionalPackagesToCook < 0 || numAdditionalPackagesToCook > 10000) // Adjust the upper limit as needed
+            {
+                throw new FormatException($"Invalid numAdditionalPackagesToCook value: {numAdditionalPackagesToCook}");
+            }
+
             for (int i = 0; i < numAdditionalPackagesToCook; i++)
             {
                 Console.WriteLine($"Reading AdditionalPackagesToCook[{i}], Position: {reader.BaseStream.Position}");
