@@ -746,10 +746,14 @@ namespace UAssetAPI
             Console.WriteLine($"numAdditionalPackagesToCook: {numAdditionalPackagesToCook}, Position: {reader.BaseStream.Position}");
 
             // Validate numAdditionalPackagesToCook to ensure it is within a reasonable range
-            if (numAdditionalPackagesToCook < 0 || numAdditionalPackagesToCook > 10000) // Adjust the upper limit as needed
+            if (numAdditionalPackagesToCook < 0 || numAdditionalPackagesToCook > 100000) // Adjust the upper limit as needed
             {
+                Console.WriteLine($"Invalid numAdditionalPackagesToCook value detected: {numAdditionalPackagesToCook}, Position: {reader.BaseStream.Position}");
                 throw new FormatException($"Invalid numAdditionalPackagesToCook value: {numAdditionalPackagesToCook}");
             }
+
+            // Additional logging to capture stream state
+            Console.WriteLine($"Stream state before reading AdditionalPackagesToCook: Position: {reader.BaseStream.Position}, Length: {reader.BaseStream.Length}");
 
             for (int i = 0; i < numAdditionalPackagesToCook; i++)
             {

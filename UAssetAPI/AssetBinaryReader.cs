@@ -38,6 +38,7 @@ namespace UAssetAPI
         public override int ReadInt32()
         {
             byte[] bytes = base.ReadBytes(4);
+            Console.WriteLine($"ReadInt32 bytes: {BitConverter.ToString(bytes)}, Stream position: {BaseStream.Position}");
             if (bytes.Length != 4) throw new EndOfStreamException("Unable to read 4 bytes for Int32 conversion.");
             return BitConverter.ToInt32(ReverseIfBigEndian(bytes), 0);
         }
