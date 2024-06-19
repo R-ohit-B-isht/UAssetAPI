@@ -747,8 +747,16 @@ namespace UAssetAPI
             for (int i = 0; i < numAdditionalPackagesToCook; i++)
             {
                 Console.WriteLine($"Reading AdditionalPackagesToCook[{i}], Position: {reader.BaseStream.Position}");
-                AdditionalPackagesToCook.Add(reader.ReadFString());
-                Console.WriteLine($"Read AdditionalPackagesToCook[{i}], Position: {reader.BaseStream.Position}");
+                try
+                {
+                    AdditionalPackagesToCook.Add(reader.ReadFString());
+                    Console.WriteLine($"Read AdditionalPackagesToCook[{i}], Position: {reader.BaseStream.Position}");
+                }
+                catch (System.IO.EndOfStreamException e)
+                {
+                    Console.WriteLine($"EndOfStreamException at AdditionalPackagesToCook[{i}], Position: {reader.BaseStream.Position}, Exception: {e.Message}");
+                    throw;
+                }
             }
 
             if (LegacyFileVersion > -7)
