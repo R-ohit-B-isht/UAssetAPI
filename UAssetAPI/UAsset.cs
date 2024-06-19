@@ -746,7 +746,9 @@ namespace UAssetAPI
             Console.WriteLine($"numAdditionalPackagesToCook: {numAdditionalPackagesToCook}, Position: {reader.BaseStream.Position}");
             for (int i = 0; i < numAdditionalPackagesToCook; i++)
             {
+                Console.WriteLine($"Reading AdditionalPackagesToCook[{i}], Position: {reader.BaseStream.Position}");
                 AdditionalPackagesToCook.Add(reader.ReadFString());
+                Console.WriteLine($"Read AdditionalPackagesToCook[{i}], Position: {reader.BaseStream.Position}");
             }
 
             if (LegacyFileVersion > -7)
