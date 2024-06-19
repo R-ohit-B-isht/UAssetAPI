@@ -74,9 +74,13 @@ namespace UAssetAPI
 
         public virtual FString ReadFString(FSerializedNameHeader nameHeader = null)
         {
+            Console.WriteLine($"ReadFString called. Stream position: {BaseStream.Position}");
+
             if (nameHeader == null)
             {
                 int length = this.ReadInt32();
+                Console.WriteLine($"ReadInt32 for length: {length}, Stream position: {BaseStream.Position}");
+
                 switch (length)
                 {
                     case 0:
@@ -85,11 +89,13 @@ namespace UAssetAPI
                         if (length < 0)
                         {
                             byte[] data = this.ReadBytes(-length * 2);
+                            Console.WriteLine($"ReadBytes for Unicode string: {data.Length} bytes, Stream position: {BaseStream.Position}");
                             return new FString(Encoding.Unicode.GetString(data, 0, data.Length - 2), Encoding.Unicode);
                         }
                         else
                         {
                             byte[] data = this.ReadBytes(length);
+                            Console.WriteLine($"ReadBytes for ASCII string: {data.Length} bytes, Stream position: {BaseStream.Position}");
                             return new FString(Encoding.ASCII.GetString(data, 0, data.Length - 1), Encoding.ASCII);
                         }
                 }
@@ -99,11 +105,13 @@ namespace UAssetAPI
                 if (nameHeader.bIsWide)
                 {
                     byte[] data = this.ReadBytes(nameHeader.Len * 2); // TODO: are we actually supposed to divide by two?
+                    Console.WriteLine($"ReadBytes for wide string: {data.Length} bytes, Stream position: {BaseStream.Position}");
                     return new FString(Encoding.Unicode.GetString(data, 0, data.Length), Encoding.Unicode);
                 }
                 else
                 {
                     byte[] data = this.ReadBytes(nameHeader.Len);
+                    Console.WriteLine($"ReadBytes for narrow string: {data.Length} bytes, Stream position: {BaseStream.Position}");
                     return new FString(Encoding.ASCII.GetString(data, 0, data.Length), Encoding.ASCII);
                 }
             }
