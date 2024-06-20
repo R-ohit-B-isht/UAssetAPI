@@ -767,15 +767,23 @@ namespace UAssetAPI
             }
 
             // Ensure the stream position is valid before attempting to read AdditionalPackagesToCook
-            if (reader.BaseStream.Position + (numAdditionalPackagesToCook * sizeof(FString)) <= reader.BaseStream.Length)
+            if (reader.BaseStream.Position + (numAdditionalPackagesToCook * 4) <= reader.BaseStream.Length) // Assuming an average size of 4 bytes per FString for validation
             {
                 for (int i = 0; i < numAdditionalPackagesToCook; i++)
                 {
                     Console.WriteLine($"Reading AdditionalPackagesToCook[{i}], Position: {reader.BaseStream.Position}");
                     try
                     {
-                        AdditionalPackagesToCook.Add(reader.ReadFString());
-                        Console.WriteLine($"Read AdditionalPackagesToCook[{i}], Position: {reader.BaseStream.Position}");
+                        if (reader.BaseStream.Position + 4 <= reader.BaseStream.Length) // Check if there is enough data to read an FString
+                        {
+                            AdditionalPackagesToCook.Add(reader.ReadFString());
+                            Console.WriteLine($"Read AdditionalPackagesToCook[{i}], Position: {reader.BaseStream.Position}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Not enough data to read AdditionalPackagesToCook[{i}], Position: {reader.BaseStream.Position}, Length: {reader.BaseStream.Length}");
+                            break;
+                        }
                     }
                     catch (System.IO.EndOfStreamException e)
                     {
