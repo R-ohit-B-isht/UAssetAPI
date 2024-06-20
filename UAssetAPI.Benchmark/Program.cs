@@ -64,203 +64,217 @@ namespace UAssetAPI.Benchmark
 
             var timer = new Stopwatch();
 
-            switch (args[0])
+            try
             {
-                case "testset":
-                    string[] allTestingAssets = Directory.GetFiles("TestAssets");
-                    int num1 = 0;
-                    double totalTime = 0;
-                    foreach (string assetPath in allTestingAssets)
-                    {
-                        if (!allowedExtensions.Contains(Path.GetExtension(assetPath))) continue;
-                        if (!allTestAssetVersions.ContainsKey(Path.GetFileNameWithoutExtension(assetPath))) continue;
-                        totalTime += BenchmarkAsset(assetPath, (EngineVersion)Enum.Parse(typeof(EngineVersion), allTestAssetVersions[Path.GetFileNameWithoutExtension(assetPath)]));
-                        num1 += 1;
-                    }
-                    Console.WriteLine("\n" + num1 + " assets parsed in " + NumberToTwoDecimalPlaces(totalTime) + " ms");
-                    break;
-                case "testall":
-                    string[] allRelevantArgs = args.Skip(1).Take(args.Length - 2).ToArray();
-                    string[] allTestingAssets2 = Directory.GetFiles(string.Join(" ", allRelevantArgs), "*.*", SearchOption.AllDirectories);
-                    EngineVersion ver = (EngineVersion)Enum.Parse(typeof(EngineVersion), args[args.Length - 1]);
-
-                    // load mappings
-                    Usmap mappings = null;
-                    timer.Restart();
-                    foreach (string assetPath in allTestingAssets2)
-                    {
-                        if (Path.GetExtension(assetPath) == ".usmap")
+                switch (args[0])
+                {
+                    case "testset":
+                        string[] allTestingAssets = Directory.GetFiles("TestAssets");
+                        int num1 = 0;
+                        double totalTime = 0;
+                        foreach (string assetPath in allTestingAssets)
                         {
+                            if (!allowedExtensions.Contains(Path.GetExtension(assetPath))) continue;
+                            if (!allTestAssetVersions.ContainsKey(Path.GetFileNameWithoutExtension(assetPath))) continue;
+                            totalTime += BenchmarkAsset(assetPath, (EngineVersion)Enum.Parse(typeof(EngineVersion), allTestAssetVersions[Path.GetFileNameWithoutExtension(assetPath)]));
+                            num1 += 1;
+                        }
+                        Console.WriteLine("\n" + num1 + " assets parsed in " + NumberToTwoDecimalPlaces(totalTime) + " ms");
+                        break;
+                    case "testall":
+                        string[] allRelevantArgs = args.Skip(1).Take(args.Length - 2).ToArray();
+                        string[] allTestingAssets2 = Directory.GetFiles(string.Join(" ", allRelevantArgs), "*.*", SearchOption.AllDirectories);
+                        EngineVersion ver = (EngineVersion)Enum.Parse(typeof(EngineVersion), args[args.Length - 1]);
+
+                        // load mappings
+                        Usmap mappings = null;
+                        timer.Restart();
+                        foreach (string assetPath in allTestingAssets2)
+                        {
+                            if (Path.GetExtension(assetPath) == ".usmap")
+                            {
+                                timer.Start();
+                                mappings = new Usmap(assetPath);
+                                timer.Stop();
+                                Console.WriteLine("Mappings parsed in " + NumberToTwoDecimalPlaces(timer.Elapsed.TotalMilliseconds) + " ms");
+                                break;
+                            }
+                        }
+
+                        // get num assets in total for status update
+                        int numTotal = 0;
+                        foreach (string assetPath in allTestingAssets2)
+                        {
+                            if (!allowedExtensions.Contains(Path.GetExtension(assetPath))) continue;
+                            numTotal += 1;
+                        }
+
+                        int num = 0;
+                        int numPassedBinaryEq = 0;
+                        int numPassedAllExports = 0;
+                        int numExportsTotal = 0;
+                        timer.Restart();
+
+                        int thresholdToForceStatusUpdate = numTotal / 4;
+                        int numAtLastStatusUpdate = 0;
+                        double lastMsGaveStatusUpdate = double.MinValue;
+                        ISet<string> problemAssets = new HashSet<string>();
+                        foreach (string assetPath in allTestingAssets2)
+                        {
+                            if (!allowedExtensions.Contains(Path.GetExtension(assetPath))) continue;
+
+                            // give status update every once in a while
+                            if (timer.Elapsed.TotalMilliseconds - lastMsGaveStatusUpdate >= 3000 || (timer.Elapsed.TotalMilliseconds - lastMsGaveStatusUpdate >= 500 && (num - numAtLastStatusUpdate) > thresholdToForceStatusUpdate))
+                            {
+                                lastMsGaveStatusUpdate = timer.Elapsed.TotalMilliseconds;
+                                numAtLastStatusUpdate = num;
+                                Console.WriteLine("[" + NumberToTwoDecimalPlaces(timer.Elapsed.TotalMilliseconds) + " ms] " + num + "/" + numTotal + " assets parsed");
+                            }
+
                             timer.Start();
-                            mappings = new Usmap(assetPath);
+                            UAsset loaded = null;
+                            try
+                            {
+                                loaded = new UAsset(assetPath, ver, mappings);
+                            }
+                            catch
+                            {
+                                timer.Stop();
+                                numExportsTotal += loaded?.Exports?.Count ?? 0;
+                                num += 1;
+                                loaded = null;
+                                continue;
+                            }
                             timer.Stop();
-                            Console.WriteLine("Mappings parsed in " + NumberToTwoDecimalPlaces(timer.Elapsed.TotalMilliseconds) + " ms");
-                            break;
-                        }
-                    }
 
-                    // get num assets in total for status update
-                    int numTotal = 0;
-                    foreach (string assetPath in allTestingAssets2)
-                    {
-                        if (!allowedExtensions.Contains(Path.GetExtension(assetPath))) continue;
-                        numTotal += 1;
-                    }
+                            bool isProblemAsset = false;
+                            if (loaded.VerifyBinaryEquality())
+                            {
+                                numPassedBinaryEq += 1;
+                            }
+                            else
+                            {
+                                isProblemAsset = true;
+                            }
 
-                    int num = 0;
-                    int numPassedBinaryEq = 0;
-                    int numPassedAllExports = 0;
-                    int numExportsTotal = 0;
-                    timer.Restart();
+                            if (CheckAllExportsParsedCorrectly(loaded))
+                            {
+                                numPassedAllExports += 1;
+                            }
+                            else
+                            {
+                                isProblemAsset = true;
+                            }
 
-                    int thresholdToForceStatusUpdate = numTotal / 4;
-                    int numAtLastStatusUpdate = 0;
-                    double lastMsGaveStatusUpdate = double.MinValue;
-                    ISet<string> problemAssets = new HashSet<string>();
-                    foreach (string assetPath in allTestingAssets2)
-                    {
-                        if (!allowedExtensions.Contains(Path.GetExtension(assetPath))) continue;
-
-                        // give status update every once in a while
-                        if (timer.Elapsed.TotalMilliseconds - lastMsGaveStatusUpdate >= 3000 || (timer.Elapsed.TotalMilliseconds - lastMsGaveStatusUpdate >= 500 && (num - numAtLastStatusUpdate) > thresholdToForceStatusUpdate))
-                        {
-                            lastMsGaveStatusUpdate = timer.Elapsed.TotalMilliseconds;
-                            numAtLastStatusUpdate = num;
-                            Console.WriteLine("[" + NumberToTwoDecimalPlaces(timer.Elapsed.TotalMilliseconds) + " ms] " + num + "/" + numTotal + " assets parsed");
-                        }
-
-                        timer.Start();
-                        UAsset loaded = null;
-                        try
-                        {
-                            loaded = new UAsset(assetPath, ver, mappings);
-                        }
-                        catch
-                        {
-                            timer.Stop();
-                            numExportsTotal += loaded?.Exports?.Count ?? 0;
+                            if (isProblemAsset) problemAssets.Add(assetPath);
+                            numExportsTotal += loaded.Exports.Count;
                             num += 1;
                             loaded = null;
-                            continue;
                         }
-                        timer.Stop();
 
-                        bool isProblemAsset = false;
-                        if (loaded.VerifyBinaryEquality())
+                        // Final summary output
+                        Console.WriteLine();
+                        Console.WriteLine("=== Benchmark Test Summary ===");
+                        Console.WriteLine("Total assets parsed: " + num);
+                        Console.WriteLine("Total time taken: " + NumberToTwoDecimalPlaces(timer.Elapsed.TotalMilliseconds) + " ms");
+                        Console.WriteLine("Average time per asset: " + NumberToTwoDecimalPlaces(timer.Elapsed.TotalMilliseconds / num) + " ms");
+                        Console.WriteLine("Total exports parsed: " + numExportsTotal);
+                        Console.WriteLine("Average time per 100 exports: " + NumberToTwoDecimalPlaces(timer.Elapsed.TotalMilliseconds / numExportsTotal * 100) + " ms");
+                        Console.WriteLine("Assets passed binary equality: " + numPassedBinaryEq + " (" + NumberToTwoDecimalPlaces(numPassedBinaryEq / (double)num * 100) + "%)");
+                        Console.WriteLine("Assets passed all exports: " + numPassedAllExports + " (" + NumberToTwoDecimalPlaces(numPassedAllExports / (double)num * 100) + "%)");
+                        Console.WriteLine("===============================");
+
+                        if (problemAssets.Count > 0)
                         {
-                            numPassedBinaryEq += 1;
+                            int i = 0;
+                            Console.WriteLine("\nList of problematic assets:");
+                            foreach (string problemAsset in problemAssets)
+                            {
+                                Console.WriteLine(problemAsset);
+                                i++;
+                                if (i >= 50) break;
+                            }
+                            if (problemAssets.Count > 50) Console.WriteLine("...");
                         }
-                        else
+                        break;
+                    case "testcpu":
+                        int numCpuTrials = 5;
+                        double trialSum = 0;
+                        for (int i = 0; i < numCpuTrials; i++)
                         {
-                            isProblemAsset = true;
+                            // load each time to avoid any weird stream optimizations
+                            MemoryStream oneBigAsset = new UAsset().PathToStream(Path.Combine("TestAssets", "PlayerBase01.umap"));
+                            var binReader = new AssetBinaryReader(oneBigAsset, null);
+
+                            timer.Restart();
+                            timer.Start();
+                            new UAsset(binReader, EngineVersion.VER_UE5_3);
+                            timer.Stop();
+
+                            oneBigAsset.Dispose();
+                            trialSum += timer.Elapsed.TotalMilliseconds;
+                            Console.WriteLine("CPU trial " + (i + 1) + " completed in " + timer.Elapsed.TotalMilliseconds + " ms");
                         }
-
-                        if (CheckAllExportsParsedCorrectly(loaded))
-
-                        {
-                            numPassedAllExports += 1;
-                        }
-                        else
-                        {
-                            isProblemAsset = true;
-                        }
-
-                        if (isProblemAsset) problemAssets.Add(assetPath);
-                        numExportsTotal += loaded.Exports.Count;
-                        num += 1;
-                        loaded = null;
-                    }
-
-                    Console.WriteLine();
-                    Console.WriteLine(num + " assets parsed in " + NumberToTwoDecimalPlaces(timer.Elapsed.TotalMilliseconds) + " ms combined (" + NumberToTwoDecimalPlaces(timer.Elapsed.TotalMilliseconds / num) + " ms/asset, on average)");
-                    Console.WriteLine(numExportsTotal + " exports were parsed (" + NumberToTwoDecimalPlaces(timer.Elapsed.TotalMilliseconds / numExportsTotal * 100) + " ms per 100 exports, on average)");
-                    Console.WriteLine(numPassedBinaryEq + "/" + num + " assets (" + NumberToTwoDecimalPlaces(numPassedBinaryEq / (double)num * 100) + "%) passed binary equality");
-                    Console.WriteLine(numPassedAllExports + "/" + num + " assets (" + NumberToTwoDecimalPlaces(numPassedAllExports / (double)num * 100) + "%) passed on all exports");
-
-                    if (problemAssets.Count > 0)
-                    {
-                        int i = 0;
-                        Console.WriteLine("\nList of problematic assets:");
-                        foreach (string problemAsset in problemAssets)
-                        {
-                            Console.WriteLine(problemAsset);
-                            i++;
-                            if (i >= 50) break;
-                        }
-                        if (problemAssets.Count > 50) Console.WriteLine("...");
-                    }
-                    break;
-                case "testcpu":
-                    int numCpuTrials = 5;
-                    double trialSum = 0;
-                    for (int i = 0; i < numCpuTrials; i++)
-                    {
-                        // load each time to avoid any weird stream optimizations
-                        MemoryStream oneBigAsset = new UAsset().PathToStream(Path.Combine("TestAssets", "PlayerBase01.umap"));
-                        var binReader = new AssetBinaryReader(oneBigAsset, null);
-
+                        Console.WriteLine("\n" + numCpuTrials + " CPU trials completed in " + trialSum + " ms (" + (trialSum / numCpuTrials) + " ms/trial)");
+                        break;
+                    case "test":
+                        BenchmarkAsset(args[1], (EngineVersion)Enum.Parse(typeof(EngineVersion), args[2]));
+                        break;
+                    case "guesscustomversion":
                         timer.Restart();
                         timer.Start();
-                        new UAsset(binReader, EngineVersion.VER_UE5_3);
+                        UAsset.GuessCustomVersionFromTypeAndEngineVersion(EngineVersion.VER_UE5_3, typeof(FReleaseObjectVersion));
                         timer.Stop();
+                        Console.WriteLine("Custom version first retrieved in " + timer.Elapsed.TotalMilliseconds + " ms");
 
-                        oneBigAsset.Dispose();
-                        trialSum += timer.Elapsed.TotalMilliseconds;
-                        Console.WriteLine("CPU trial " + (i + 1) + " completed in " + timer.Elapsed.TotalMilliseconds + " ms");
-                    }
-                    Console.WriteLine("\n" + numCpuTrials + " CPU trials completed in " + trialSum + " ms (" + (trialSum / numCpuTrials) + " ms/trial)");
-                    break;
-                case "test":
-                    BenchmarkAsset(args[1], (EngineVersion)Enum.Parse(typeof(EngineVersion), args[2]));
-                    break;
-                case "guesscustomversion":
-                    timer.Restart();
-                    timer.Start();
-                    UAsset.GuessCustomVersionFromTypeAndEngineVersion(EngineVersion.VER_UE5_3, typeof(FReleaseObjectVersion));
-                    timer.Stop();
-                    Console.WriteLine("Custom version first retrieved in " + timer.Elapsed.TotalMilliseconds + " ms");
+                        int numCustomVersionTrials = 20000;
+                        EngineVersion testingEngineVersion = EngineVersion.VER_UE5_3;
+                        timer.Restart();
+                        timer.Start();
+                        for (int i = 0; i < numCustomVersionTrials; i++)
+                        {
+                            UAsset.GuessCustomVersionFromTypeAndEngineVersion(testingEngineVersion, typeof(FReleaseObjectVersion));
 
-                    int numCustomVersionTrials = 20000;
-                    EngineVersion testingEngineVersion = EngineVersion.VER_UE5_3;
-                    timer.Restart();
-                    timer.Start();
-                    for (int i = 0; i < numCustomVersionTrials; i++)
-                    {
-                        UAsset.GuessCustomVersionFromTypeAndEngineVersion(testingEngineVersion, typeof(FReleaseObjectVersion));
+                            testingEngineVersion += 1;
+                            if (testingEngineVersion > EngineVersion.VER_UE5_3) testingEngineVersion = EngineVersion.VER_UE5_3;
+                        }
+                        timer.Stop();
+                        Console.WriteLine("Custom version then retrieved " + numCustomVersionTrials + " times in " + timer.Elapsed.TotalMilliseconds + " ms (" + (timer.Elapsed.TotalMilliseconds / numCustomVersionTrials) + " ms/trial)");
+                        break;
+                    case "longestnames":
+                        timer.Restart();
+                        timer.Start();
+                        Assembly relevantAssembly = typeof(UAsset).Assembly;
+                        List<string> lineas = new List<string>();
+                        foreach (Type type in relevantAssembly.GetTypes())
+                        {
+                            if (type.IsEnum) continue;
+                            lineas.Add(type.Name);
+                            foreach (MemberInfo memb in type.GetMembers()) lineas.Add(memb.Name);
+                        }
 
-                        testingEngineVersion += 1;
-                        if (testingEngineVersion > EngineVersion.VER_UE5_3) testingEngineVersion = EngineVersion.VER_UE5_3;
-                    }
-                    timer.Stop();
-                    Console.WriteLine("Custom version then retrieved " + numCustomVersionTrials + " times in " + timer.Elapsed.TotalMilliseconds + " ms (" + (timer.Elapsed.TotalMilliseconds / numCustomVersionTrials) + " ms/trial)");
-                    break;
-                case "longestnames":
-                    timer.Restart();
-                    timer.Start();
-                    Assembly relevantAssembly = typeof(UAsset).Assembly;
-                    List<string> lineas = new List<string>();
-                    foreach (Type type in relevantAssembly.GetTypes())
-                    {
-                        if (type.IsEnum) continue;
-                        lineas.Add(type.Name);
-                        foreach (MemberInfo memb in type.GetMembers()) lineas.Add(memb.Name);
-                    }
+                        Console.WriteLine(string.Join('\n', lineas.OrderByDescending(x => x.Length).Distinct().Take(20)));
+                        Console.WriteLine("Operation completed in " + timer.Elapsed.TotalMilliseconds + " ms");
+                        timer.Stop();
+                        break;
+                    case "zen":
+                        IOStoreContainer test1 = new IOStoreContainer(@"C:\Program Files (x86)\Steam\steamapps\common\Garten Of Banban\Clay\Content\Paks\global.utoc");
+                        ZenAsset test = new ZenAsset(EngineVersion.VER_UE5_1, new Usmap(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "UAssetGUI", "Mappings", "Clay.usmap")));
+                        test.GlobalData = new IOGlobalData(test1, EngineVersion.VER_UE5_1);
+                        test.Read(test.PathToReader(Path.Combine("TestAssets", "B_Gamemode.uasset")));
+                        Console.WriteLine(test.Name);
 
-                    Console.WriteLine(string.Join('\n', lineas.OrderByDescending(x => x.Length).Distinct().Take(20)));
-                    Console.WriteLine("Operation completed in " + timer.Elapsed.TotalMilliseconds + " ms");
-                    timer.Stop();
-                    break;
-                case "zen":
-                    IOStoreContainer test1 = new IOStoreContainer(@"C:\Program Files (x86)\Steam\steamapps\common\Garten Of Banban\Clay\Content\Paks\global.utoc");
-                    ZenAsset test = new ZenAsset(EngineVersion.VER_UE5_1, new Usmap(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "UAssetGUI", "Mappings", "Clay.usmap")));
-                    test.GlobalData = new IOGlobalData(test1, EngineVersion.VER_UE5_1);
-                    test.Read(test.PathToReader(Path.Combine("TestAssets", "B_Gamemode.uasset")));
-                    Console.WriteLine(test.Name);
-
-                    MemoryStream testStrm = new MemoryStream();
-                    new AssetBinaryWriter(testStrm, test).WriteNameBatch(test.HashVersion, (IList<FString>)test.GetNameMapIndexList());
-                    Console.WriteLine(BitConverter.ToString(testStrm.ToArray()));
-                    break;
+                        MemoryStream testStrm = new MemoryStream();
+                        new AssetBinaryWriter(testStrm, test).WriteNameBatch(test.HashVersion, (IList<FString>)test.GetNameMapIndexList());
+                        Console.WriteLine(BitConverter.ToString(testStrm.ToArray()));
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("An error occurred during the benchmark tests: " + ex.Message);
+                Console.WriteLine(ex.StackTrace);
+                File.AppendAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "screenshots", "benchmark_exceptions.log"), $"Exception: {ex.Message}\nStackTrace: {ex.StackTrace}\n\n");
             }
         }
 

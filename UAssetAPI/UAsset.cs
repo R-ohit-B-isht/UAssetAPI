@@ -746,11 +746,53 @@ namespace UAssetAPI
             Console.WriteLine($"numAdditionalPackagesToCook: {numAdditionalPackagesToCook}, Position: {reader.BaseStream.Position}");
 
             // Validate numAdditionalPackagesToCook to ensure it is within a reasonable range
-            if (numAdditionalPackagesToCook < 0 || numAdditionalPackagesToCook > 100000) // Adjust the upper limit as needed
+            const int maxExpectedPackages = 100; // Example upper limit, to be adjusted based on UE 5.3 specs
+            if (numAdditionalPackagesToCook < 0 || numAdditionalPackagesToCook > maxExpectedPackages)
             {
                 Console.WriteLine($"Invalid numAdditionalPackagesToCook value detected: {numAdditionalPackagesToCook}, Position: {reader.BaseStream.Position}");
 
-                // Read the raw bytes and interpret them in both little-endian and big-endian formats
+                // Attempt to recover by checking if the value is within an acceptable range after considering potential byte order issues
+                int recoveredValue = TryRecoverPackageCount(reader, numAdditionalPackagesToCook);
+                if (recoveredValue >= 0 && recoveredValue <= maxExpectedPackages)
+                {
+                    numAdditionalPackagesToCook = recoveredValue;
+                    Console.WriteLine($"Recovered numAdditionalPackagesToCook value: {numAdditionalPackagesToCook}");
+                }
+                else
+                {
+                    // If no valid interpretation is found, set to a default value and log a warning
+                    numAdditionalPackagesToCook = 0;
+                    Console.WriteLine($"Failed to recover valid numAdditionalPackagesToCook value, set to default: {numAdditionalPackagesToCook}");
+                }
+            }
+
+            // Ensure the stream position is valid before attempting to read AdditionalPackagesToCook
+            if (reader.BaseStream.Position + (numAdditionalPackagesToCook * sizeof(FString)) <= reader.BaseStream.Length)
+            {
+                for (int i = 0; i < numAdditionalPackagesToCook; i++)
+                {
+                    Console.WriteLine($"Reading AdditionalPackagesToCook[{i}], Position: {reader.BaseStream.Position}");
+                    try
+                    {
+                        AdditionalPackagesToCook.Add(reader.ReadFString());
+                        Console.WriteLine($"Read AdditionalPackagesToCook[{i}], Position: {reader.BaseStream.Position}");
+                    }
+                    catch (System.IO.EndOfStreamException e)
+                    {
+                        Console.WriteLine($"EndOfStreamException at AdditionalPackagesToCook[{i}], Position: {reader.BaseStream.Position}, Exception: {e.Message}");
+                        throw;
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine($"Stream position invalid for reading AdditionalPackagesToCook: Position: {reader.BaseStream.Position}, Length: {reader.BaseStream.Length}");
+            }
+
+            // Helper method to attempt recovery of package count
+            int TryRecoverPackageCount(AssetBinaryReader reader, int currentValue)
+            {
+                // Logic to interpret raw bytes and recover the correct value
                 reader.BaseStream.Position -= sizeof(int);
                 byte[] rawBytes = reader.ReadBytes(sizeof(int));
                 int littleEndianValue = BitConverter.ToInt32(rawBytes, 0);
@@ -759,27 +801,17 @@ namespace UAssetAPI
 
                 Console.WriteLine($"Raw bytes: {BitConverter.ToString(rawBytes)}, Little-endian: {littleEndianValue}, Big-endian: {bigEndianValue}");
 
-                // Attempt to recover by setting a default value or skipping the invalid data
-                numAdditionalPackagesToCook = 0; // Set to 0 or another reasonable default value
-                // Optionally, log a warning or take other recovery actions
-                Console.WriteLine($"Recovered from invalid numAdditionalPackagesToCook value, set to default: {numAdditionalPackagesToCook}");
-            }
-
-            // Additional logging to capture stream state
-            Console.WriteLine($"Stream state before reading AdditionalPackagesToCook: Position: {reader.BaseStream.Position}, Length: {reader.BaseStream.Length}");
-
-            for (int i = 0; i < numAdditionalPackagesToCook; i++)
-            {
-                Console.WriteLine($"Reading AdditionalPackagesToCook[{i}], Position: {reader.BaseStream.Position}");
-                try
+                if (littleEndianValue >= 0 && littleEndianValue <= maxExpectedPackages)
                 {
-                    AdditionalPackagesToCook.Add(reader.ReadFString());
-                    Console.WriteLine($"Read AdditionalPackagesToCook[{i}], Position: {reader.BaseStream.Position}");
+                    return littleEndianValue;
                 }
-                catch (System.IO.EndOfStreamException e)
+                else if (bigEndianValue >= 0 && bigEndianValue <= maxExpectedPackages)
                 {
-                    Console.WriteLine($"EndOfStreamException at AdditionalPackagesToCook[{i}], Position: {reader.BaseStream.Position}, Exception: {e.Message}");
-                    throw;
+                    return bigEndianValue;
+                }
+                else
+                {
+                    return -1; // Indicate failure to recover a valid value
                 }
             }
 
@@ -1053,6 +1085,7 @@ namespace UAssetAPI
             {
                 for (int i = 0; i < Exports.Count; i++)
                 {
+                    Console.WriteLine($"Seeking to SerialOffset of Export[{i}], SerialOffset: {Exports[i].SerialOffset}, Position: {reader.BaseStream.Position}");
                     reader.BaseStream.Seek(Exports[i].SerialOffset, SeekOrigin.Begin);
                     if (manualSkips != null && manualSkips.Contains(i))
                     {
@@ -1060,11 +1093,13 @@ namespace UAssetAPI
                         {
                             Exports[i] = Exports[i].ConvertToChildExport<RawExport>();
                             ((RawExport)Exports[i]).Data = reader.ReadBytes((int)Exports[i].SerialSize);
+                            Console.WriteLine($"Read Export[{i}] as RawExport, SerialSize: {Exports[i].SerialSize}, Position: {reader.BaseStream.Position}");
                             continue;
                         }
                     }
 
                     ConvertExportToChildExportAndRead(reader, i);
+                    Console.WriteLine($"Read Export[{i}] as ChildExport, Position: {reader.BaseStream.Position}");
                 }
             }
 
