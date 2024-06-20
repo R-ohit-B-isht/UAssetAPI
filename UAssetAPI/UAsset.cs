@@ -774,8 +774,10 @@ namespace UAssetAPI
                     Console.WriteLine($"Reading AdditionalPackagesToCook[{i}], Position: {reader.BaseStream.Position}");
                     try
                     {
-                        if (reader.BaseStream.Position + 4 <= reader.BaseStream.Length) // Check if there is enough data to read an FString
+                        int stringLength = reader.ReadInt32();
+                        if (reader.BaseStream.Position + stringLength <= reader.BaseStream.Length) // Check if there is enough data to read the FString
                         {
+                            reader.BaseStream.Position -= sizeof(int); // Rewind to include the length in the read
                             AdditionalPackagesToCook.Add(reader.ReadFString());
                             Console.WriteLine($"Read AdditionalPackagesToCook[{i}], Position: {reader.BaseStream.Position}");
                         }
