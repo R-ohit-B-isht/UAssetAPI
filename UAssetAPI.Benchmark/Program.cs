@@ -59,7 +59,7 @@ namespace UAssetAPI.Benchmark
             // initialize a uasset a few times for good measure
             for (int i = 0; i < 3; i++)
             {
-                new UAsset(Path.Combine("TestAssets", "Staging_T2.umap"), EngineVersion.VER_UE4_23);
+                new UAsset(Path.Combine("TestAssets", "Staging_T2.umap"), EngineVersion.VER_UE5_3);
             }
 
             var timer = new Stopwatch();
@@ -201,7 +201,7 @@ namespace UAssetAPI.Benchmark
 
                         timer.Restart();
                         timer.Start();
-                        new UAsset(binReader, EngineVersion.VER_UE4_22);
+                        new UAsset(binReader, EngineVersion.VER_UE5_3);
                         timer.Stop();
 
                         oneBigAsset.Dispose();
@@ -216,12 +216,12 @@ namespace UAssetAPI.Benchmark
                 case "guesscustomversion":
                     timer.Restart();
                     timer.Start();
-                    UAsset.GuessCustomVersionFromTypeAndEngineVersion(EngineVersion.VER_UE4_AUTOMATIC_VERSION, typeof(FReleaseObjectVersion));
+                    UAsset.GuessCustomVersionFromTypeAndEngineVersion(EngineVersion.VER_UE5_3, typeof(FReleaseObjectVersion));
                     timer.Stop();
                     Console.WriteLine("Custom version first retrieved in " + timer.Elapsed.TotalMilliseconds + " ms");
 
                     int numCustomVersionTrials = 20000;
-                    EngineVersion testingEngineVersion = EngineVersion.VER_UE4_16;
+                    EngineVersion testingEngineVersion = EngineVersion.VER_UE5_3;
                     timer.Restart();
                     timer.Start();
                     for (int i = 0; i < numCustomVersionTrials; i++)
@@ -229,7 +229,7 @@ namespace UAssetAPI.Benchmark
                         UAsset.GuessCustomVersionFromTypeAndEngineVersion(testingEngineVersion, typeof(FReleaseObjectVersion));
 
                         testingEngineVersion += 1;
-                        if (testingEngineVersion > EngineVersion.VER_UE4_27) testingEngineVersion = EngineVersion.VER_UE4_16;
+                        if (testingEngineVersion > EngineVersion.VER_UE5_3) testingEngineVersion = EngineVersion.VER_UE5_3;
                     }
                     timer.Stop();
                     Console.WriteLine("Custom version then retrieved " + numCustomVersionTrials + " times in " + timer.Elapsed.TotalMilliseconds + " ms (" + (timer.Elapsed.TotalMilliseconds / numCustomVersionTrials) + " ms/trial)");
