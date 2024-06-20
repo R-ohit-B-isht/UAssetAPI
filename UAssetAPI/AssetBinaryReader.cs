@@ -91,7 +91,9 @@ namespace UAssetAPI
                     throw new EndOfStreamException("Not enough data to read 4 bytes for Int32 conversion.");
                 }
 
-                int length = this.ReadInt32();
+                byte[] lengthBytes = base.ReadBytes(4);
+                Console.WriteLine($"Raw bytes for length: {BitConverter.ToString(lengthBytes)}, Stream position: {BaseStream.Position}");
+                int length = BitConverter.ToInt32(ReverseIfBigEndian(lengthBytes), 0);
                 Console.WriteLine($"ReadInt32 for length: {length}, Stream position: {BaseStream.Position}");
 
                 if (length == 0)
