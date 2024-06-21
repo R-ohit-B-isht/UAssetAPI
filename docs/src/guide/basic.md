@@ -41,7 +41,7 @@ Let's start programming! Head to the `Program.cs` file and use the following pre
 ```cs
 // Instantiate the asset with the path and the engine version (4.18).
 // This reads the entire asset to memory at once; use a different constructor with an AssetBinaryReader if you don't want that
-UAsset myAsset = new UAsset("C:\\plwp_6aam_a0.uasset", EngineVersion.VER_UE4_18);
+UAsset myAsset = new UAsset("C:\\plwp_6aam_a0.uasset", EngineVersion.VER_UE5_3);
 
 // We want the 2nd export, so we reference the export at index 1.
 // There are many types, but any export that has regular "tagged" data like you see as properties in UAssetGUI can be cast to a NormalExport, like this one.
@@ -73,7 +73,7 @@ Let's say we want to modify a specific NameProperty called `InternalVariableName
 ```cs
 // Instantiate the asset with the path and the engine version (4.18).
 // This reads the entire asset to memory at once; use a different constructor with an AssetBinaryReader if you don't want that
-UAsset myAsset = new UAsset("C:\\plwp_6aam_a0.uasset", EngineVersion.VER_UE4_18);
+UAsset myAsset = new UAsset("C:\\plwp_6aam_a0.uasset", EngineVersion.VER_UE5_3);
 
 // Iterate through all the exports
 foreach (Export export in myAsset.Exports)

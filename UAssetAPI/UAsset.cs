@@ -74,6 +74,8 @@ namespace UAssetAPI
         public uint Changelist;
         /// <summary>Branch name.</summary>
         public FString Branch;
+        /// <summary>Build ID. This is a new field introduced in Unreal Engine 5.3.</summary>
+        public FString BuildId;
 
         public void Write(UnrealBinaryWriter writer)
         {
@@ -82,6 +84,7 @@ namespace UAssetAPI
             writer.Write(Patch);
             writer.Write(Changelist);
             writer.Write(Branch);
+            writer.Write(BuildId);
         }
 
         public FEngineVersion(UnrealBinaryReader reader)
@@ -91,15 +94,17 @@ namespace UAssetAPI
             Patch = reader.ReadUInt16();
             Changelist = reader.ReadUInt32();
             Branch = reader.ReadFString();
+            BuildId = reader.ReadFString();
         }
 
-        public FEngineVersion(ushort major, ushort minor, ushort patch, uint changelist, FString branch)
+        public FEngineVersion(ushort major, ushort minor, ushort patch, uint changelist, FString branch, FString buildId)
         {
             Major = major;
             Minor = minor;
             Patch = patch;
             Changelist = changelist;
             Branch = branch;
+            BuildId = buildId;
         }
     }
 
@@ -614,6 +619,7 @@ namespace UAssetAPI
             if (ObjectVersionUE5 == ObjectVersionUE5.UNKNOWN && Mappings != null && Mappings.FileVersionUE5 > 0) ObjectVersionUE5 = Mappings.FileVersionUE5;
 
             FileVersionLicenseeUE = reader.ReadInt32();
+            Console.WriteLine($"FileVersionLicenseeUE: {FileVersionLicenseeUE}, Position: {reader.BaseStream.Position}");
 
             // Custom versions container
             if (LegacyFileVersion <= -2)
@@ -622,10 +628,13 @@ namespace UAssetAPI
             }
 
             SectionSixOffset = reader.ReadInt32(); // 24
+            Console.WriteLine($"SectionSixOffset: {SectionSixOffset}, Position: {reader.BaseStream.Position}");
             FolderName = reader.ReadFString();
             PackageFlags = (EPackageFlags)reader.ReadUInt32();
             NameCount = reader.ReadInt32();
+            Console.WriteLine($"NameCount: {NameCount}, Position: {reader.BaseStream.Position}");
             NameOffset = reader.ReadInt32();
+            Console.WriteLine($"NameOffset: {NameOffset}, Position: {reader.BaseStream.Position}");
 
             if (!IsFilterEditorOnly && ObjectVersion >= ObjectVersion.VER_UE4_ADDED_PACKAGE_SUMMARY_LOCALIZATION_ID)
             {
@@ -635,29 +644,42 @@ namespace UAssetAPI
             if (ObjectVersionUE5 >= ObjectVersionUE5.ADD_SOFTOBJECTPATH_LIST)
             {
                 SoftObjectPathsCount = reader.ReadInt32();
+                Console.WriteLine($"SoftObjectPathsCount: {SoftObjectPathsCount}, Position: {reader.BaseStream.Position}");
                 SoftObjectPathsOffset = reader.ReadInt32();
+                Console.WriteLine($"SoftObjectPathsOffset: {SoftObjectPathsOffset}, Position: {reader.BaseStream.Position}");
             }
             if (ObjectVersion >= ObjectVersion.VER_UE4_SERIALIZE_TEXT_IN_PACKAGES)
             {
                 GatherableTextDataCount = reader.ReadInt32();
+                Console.WriteLine($"GatherableTextDataCount: {GatherableTextDataCount}, Position: {reader.BaseStream.Position}");
                 GatherableTextDataOffset = reader.ReadInt32();
+                Console.WriteLine($"GatherableTextDataOffset: {GatherableTextDataOffset}, Position: {reader.BaseStream.Position}");
             }
 
             ExportCount = reader.ReadInt32();
+            Console.WriteLine($"ExportCount: {ExportCount}, Position: {reader.BaseStream.Position}");
             ExportOffset = reader.ReadInt32(); // 61
+            Console.WriteLine($"ExportOffset: {ExportOffset}, Position: {reader.BaseStream.Position}");
             ImportCount = reader.ReadInt32(); // 65
+            Console.WriteLine($"ImportCount: {ImportCount}, Position: {reader.BaseStream.Position}");
             ImportOffset = reader.ReadInt32(); // 69 (haha funny)
+            Console.WriteLine($"ImportOffset: {ImportOffset}, Position: {reader.BaseStream.Position}");
             DependsOffset = reader.ReadInt32(); // 73
+            Console.WriteLine($"DependsOffset: {DependsOffset}, Position: {reader.BaseStream.Position}");
             if (ObjectVersion >= ObjectVersion.VER_UE4_ADD_STRING_ASSET_REFERENCES_MAP)
             {
                 SoftPackageReferencesCount = reader.ReadInt32(); // 77
+                Console.WriteLine($"SoftPackageReferencesCount: {SoftPackageReferencesCount}, Position: {reader.BaseStream.Position}");
                 SoftPackageReferencesOffset = reader.ReadInt32(); // 81
+                Console.WriteLine($"SoftPackageReferencesOffset: {SoftPackageReferencesOffset}, Position: {reader.BaseStream.Position}");
             }
             if (ObjectVersion >= ObjectVersion.VER_UE4_ADDED_SEARCHABLE_NAMES)
             {
                 SearchableNamesOffset = reader.ReadInt32();
+                Console.WriteLine($"SearchableNamesOffset: {SearchableNamesOffset}, Position: {reader.BaseStream.Position}");
             }
             ThumbnailTableOffset = reader.ReadInt32();
+            Console.WriteLine($"ThumbnailTableOffset: {ThumbnailTableOffset}, Position: {reader.BaseStream.Position}");
 
             // valorant garbage data is here
 
@@ -665,7 +687,7 @@ namespace UAssetAPI
 
             if (!IsFilterEditorOnly)
             {
-                PersistentGuid = ObjectVersion >= ObjectVersion.VER_UE4_ADDED_PACKAGE_OWNER 
+                PersistentGuid = ObjectVersion >= ObjectVersion.VER_UE4_ADDED_PACKAGE_OWNER
                     ? new Guid(reader.ReadBytes(16))
                     : PackageGuid;
 
@@ -676,17 +698,21 @@ namespace UAssetAPI
 
             Generations = new List<FGenerationInfo>();
             int generationCount = reader.ReadInt32();
+            Console.WriteLine($"generationCount: {generationCount}, Position: {reader.BaseStream.Position}");
             if (generationCount < 0 || generationCount > 1e5) // failsafe for some specific games
             {
                 reader.BaseStream.Position -= sizeof(int) + 16;
                 ValorantGarbageData = reader.ReadBytes(8); // garbage data
                 PackageGuid = new Guid(reader.ReadBytes(16));
                 generationCount = reader.ReadInt32();
+                Console.WriteLine($"generationCount (after garbage data): {generationCount}, Position: {reader.BaseStream.Position}");
             }
             for (int i = 0; i < generationCount; i++)
             {
                 int genNumExports = reader.ReadInt32();
+                Console.WriteLine($"genNumExports: {genNumExports}, Position: {reader.BaseStream.Position}");
                 int genNumNames = reader.ReadInt32();
+                Console.WriteLine($"genNumNames: {genNumNames}, Position: {reader.BaseStream.Position}");
                 Generations.Add(new FGenerationInfo(genNumExports, genNumNames));
             }
 
@@ -696,7 +722,7 @@ namespace UAssetAPI
             }
             else
             {
-                RecordedEngineVersion = new FEngineVersion(4, 0, 0, reader.ReadUInt32(), FString.FromString(""));
+                RecordedEngineVersion = new FEngineVersion(4, 0, 0, reader.ReadUInt32(), FString.FromString(""), FString.FromString(""));
             }
 
             if (ObjectVersion >= ObjectVersion.VER_UE4_PACKAGE_SUMMARY_HAS_COMPATIBLE_ENGINE_VERSION)
@@ -710,15 +736,93 @@ namespace UAssetAPI
 
             CompressionFlags = reader.ReadUInt32();
             int numCompressedChunks = reader.ReadInt32();
+            Console.WriteLine($"numCompressedChunks: {numCompressedChunks}, Position: {reader.BaseStream.Position}");
             if (numCompressedChunks > 0) throw new FormatException("Asset has package-level compression and is likely too old to be parsed");
 
             PackageSource = reader.ReadUInt32();
 
             AdditionalPackagesToCook = new List<FString>();
             int numAdditionalPackagesToCook = reader.ReadInt32();
-            for (int i = 0; i < numAdditionalPackagesToCook; i++)
+            Console.WriteLine($"numAdditionalPackagesToCook: {numAdditionalPackagesToCook}, Position: {reader.BaseStream.Position}");
+
+            // Validate numAdditionalPackagesToCook to ensure it is within a reasonable range
+            const int maxExpectedPackages = 100; // Example upper limit, to be adjusted based on UE 5.3 specs
+            if (numAdditionalPackagesToCook < 0 || numAdditionalPackagesToCook > maxExpectedPackages)
             {
-                AdditionalPackagesToCook.Add(reader.ReadFString());
+                Console.WriteLine($"Invalid numAdditionalPackagesToCook value detected: {numAdditionalPackagesToCook}, Position: {reader.BaseStream.Position}");
+
+                // Attempt to recover by checking if the value is within an acceptable range after considering potential byte order issues
+                int recoveredValue = TryRecoverPackageCount(reader, numAdditionalPackagesToCook);
+                if (recoveredValue >= 0 && recoveredValue <= maxExpectedPackages)
+                {
+                    numAdditionalPackagesToCook = recoveredValue;
+                    Console.WriteLine($"Recovered numAdditionalPackagesToCook value: {numAdditionalPackagesToCook}");
+                }
+                else
+                {
+                    // If no valid interpretation is found, set to a default value and log a warning
+                    numAdditionalPackagesToCook = 0;
+                    Console.WriteLine($"Failed to recover valid numAdditionalPackagesToCook value, set to default: {numAdditionalPackagesToCook}");
+                }
+            }
+
+            // Ensure the stream position is valid before attempting to read AdditionalPackagesToCook
+            if (reader.BaseStream.Position + (numAdditionalPackagesToCook * 4) <= reader.BaseStream.Length) // Assuming an average size of 4 bytes per FString for validation
+            {
+                for (int i = 0; i < numAdditionalPackagesToCook; i++)
+                {
+                    Console.WriteLine($"Reading AdditionalPackagesToCook[{i}], Position: {reader.BaseStream.Position}");
+                    try
+                    {
+                        int stringLength = reader.ReadInt32();
+                        if (reader.BaseStream.Position + stringLength <= reader.BaseStream.Length) // Check if there is enough data to read the FString
+                        {
+                            reader.BaseStream.Position -= sizeof(int); // Rewind to include the length in the read
+                            AdditionalPackagesToCook.Add(reader.ReadFString());
+                            Console.WriteLine($"Read AdditionalPackagesToCook[{i}], Position: {reader.BaseStream.Position}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Not enough data to read AdditionalPackagesToCook[{i}], Position: {reader.BaseStream.Position}, Length: {reader.BaseStream.Length}");
+                            break;
+                        }
+                    }
+                    catch (System.IO.EndOfStreamException e)
+                    {
+                        Console.WriteLine($"EndOfStreamException at AdditionalPackagesToCook[{i}], Position: {reader.BaseStream.Position}, Exception: {e.Message}");
+                        throw;
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine($"Stream position invalid for reading AdditionalPackagesToCook: Position: {reader.BaseStream.Position}, Length: {reader.BaseStream.Length}");
+            }
+
+            // Helper method to attempt recovery of package count
+            int TryRecoverPackageCount(AssetBinaryReader reader, int currentValue)
+            {
+                // Logic to interpret raw bytes and recover the correct value
+                reader.BaseStream.Position -= sizeof(int);
+                byte[] rawBytes = reader.ReadBytes(sizeof(int));
+                int littleEndianValue = BitConverter.ToInt32(rawBytes, 0);
+                Array.Reverse(rawBytes);
+                int bigEndianValue = BitConverter.ToInt32(rawBytes, 0);
+
+                Console.WriteLine($"Raw bytes: {BitConverter.ToString(rawBytes)}, Little-endian: {littleEndianValue}, Big-endian: {bigEndianValue}");
+
+                if (littleEndianValue >= 0 && littleEndianValue <= maxExpectedPackages)
+                {
+                    return littleEndianValue;
+                }
+                else if (bigEndianValue >= 0 && bigEndianValue <= maxExpectedPackages)
+                {
+                    return bigEndianValue;
+                }
+                else
+                {
+                    return -1; // Indicate failure to recover a valid value
+                }
             }
 
             if (LegacyFileVersion > -7)
@@ -790,7 +894,7 @@ namespace UAssetAPI
                 {
                     OverrideNameMapHashes[nameInMap] = 0;
                 }
-                else if (hashes >> 16 == 0 && nameInMap.Value == nameInMap.Value.ToLowerInvariant()) // WITH_CASE_PRESERVING_NAME = 0; if pre-4.23, do not serialize CasePreservingHash 
+                else if (hashes >> 16 == 0 && nameInMap.Value == nameInMap.Value.ToLowerInvariant()) // WITH_CASE_PRESERVING_NAME = 0; if pre-4.23, do not serialize CasePreservingHash
                 {
                     nameInMap.IsCasePreserving = false;
                 }
@@ -991,6 +1095,7 @@ namespace UAssetAPI
             {
                 for (int i = 0; i < Exports.Count; i++)
                 {
+                    Console.WriteLine($"Seeking to SerialOffset of Export[{i}], SerialOffset: {Exports[i].SerialOffset}, Position: {reader.BaseStream.Position}");
                     reader.BaseStream.Seek(Exports[i].SerialOffset, SeekOrigin.Begin);
                     if (manualSkips != null && manualSkips.Contains(i))
                     {
@@ -998,11 +1103,13 @@ namespace UAssetAPI
                         {
                             Exports[i] = Exports[i].ConvertToChildExport<RawExport>();
                             ((RawExport)Exports[i]).Data = reader.ReadBytes((int)Exports[i].SerialSize);
+                            Console.WriteLine($"Read Export[{i}] as RawExport, SerialSize: {Exports[i].SerialSize}, Position: {reader.BaseStream.Position}");
                             continue;
                         }
                     }
 
                     ConvertExportToChildExportAndRead(reader, i);
+                    Console.WriteLine($"Read Export[{i}] as ChildExport, Position: {reader.BaseStream.Position}");
                 }
             }
 

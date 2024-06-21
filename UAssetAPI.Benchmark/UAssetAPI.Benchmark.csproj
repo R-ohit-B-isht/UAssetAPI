@@ -1,9 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <ProjectGuid>{A74E7E85-1797-477C-AEC1-583AE7D109D0}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
     <AssemblyTitle>UAssetAPI.Benchmark</AssemblyTitle>
     <Product>UAssetAPI.Benchmark</Product>
     <Copyright>Copyright © Atenfyr 2023</Copyright>
@@ -47,9 +47,10 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <PackageReference Include="MSTest.TestAdapter" Version="2.2.7" />
+    <PackageReference Include="MSTest.TestFramework" Version="2.2.7" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Remove="obj\Debug Verbose\.NETFramework,Version=v4.7.2.AssemblyAttributes.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Update="TestAssets\Begin_Player.uasset">

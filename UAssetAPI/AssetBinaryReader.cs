@@ -37,7 +37,16 @@ namespace UAssetAPI
 
         public override int ReadInt32()
         {
-            return BitConverter.ToInt32(ReverseIfBigEndian(base.ReadBytes(4)), 0);
+            if (BaseStream.Length - BaseStream.Position < 4)
+            {
+                Console.WriteLine($"Stream length: {BaseStream.Length}, Current position: {BaseStream.Position}, Remaining bytes: {BaseStream.Length - BaseStream.Position}");
+                throw new EndOfStreamException("Not enough data to read 4 bytes for Int32 conversion.");
+            }
+            byte[] bytes = base.ReadBytes(4);
+            Console.WriteLine($"ReadInt32 bytes: {BitConverter.ToString(bytes)}, Stream position: {BaseStream.Position}");
+            int result = BitConverter.ToInt32(ReverseIfBigEndian(bytes), 0);
+            Console.WriteLine($"ReadInt32 result: {result}, Stream position after read: {BaseStream.Position}");
+            return result;
         }
 
         public override uint ReadUInt32()
@@ -72,36 +81,75 @@ namespace UAssetAPI
 
         public virtual FString ReadFString(FSerializedNameHeader nameHeader = null)
         {
+            Console.WriteLine($"ReadFString called. Stream position: {BaseStream.Position}");
+
             if (nameHeader == null)
             {
-                int length = this.ReadInt32();
-                switch (length)
+                if (BaseStream.Length - BaseStream.Position < 4)
                 {
-                    case 0:
-                        return null;
-                    default:
-                        if (length < 0)
-                        {
-                            byte[] data = this.ReadBytes(-length * 2);
-                            return new FString(Encoding.Unicode.GetString(data, 0, data.Length - 2), Encoding.Unicode);
-                        }
-                        else
-                        {
-                            byte[] data = this.ReadBytes(length);
-                            return new FString(Encoding.ASCII.GetString(data, 0, data.Length - 1), Encoding.ASCII);
-                        }
+                    Console.WriteLine($"Stream length: {BaseStream.Length}, Current position: {BaseStream.Position}, Remaining bytes: {BaseStream.Length - BaseStream.Position}");
+                    throw new EndOfStreamException("Not enough data to read 4 bytes for Int32 conversion.");
+                }
+
+                byte[] lengthBytes = base.ReadBytes(4);
+                Console.WriteLine($"Raw bytes for length: {BitConverter.ToString(lengthBytes)}, Stream position: {BaseStream.Position}");
+                int length = BitConverter.ToInt32(ReverseIfBigEndian(lengthBytes), 0);
+                Console.WriteLine($"ReadInt32 for length: {length}, Stream position: {BaseStream.Position}");
+
+                if (length == 0)
+                {
+                    return null;
+                }
+
+                if (length < 0)
+                {
+                    if (BaseStream.Length - BaseStream.Position < -length * 2)
+                    {
+                        Console.WriteLine($"Stream length: {BaseStream.Length}, Current position: {BaseStream.Position}, Remaining bytes: {BaseStream.Length - BaseStream.Position}");
+                        throw new EndOfStreamException("Not enough data to read Unicode string.");
+                    }
+
+                    byte[] data = this.ReadBytes(-length * 2);
+                    Console.WriteLine($"ReadBytes for Unicode string: {data.Length} bytes, Stream position: {BaseStream.Position}");
+                    return new FString(Encoding.Unicode.GetString(data, 0, data.Length - 2), Encoding.Unicode);
+                }
+                else
+                {
+                    if (BaseStream.Length - BaseStream.Position < length)
+                    {
+                        Console.WriteLine($"Stream length: {BaseStream.Length}, Current position: {BaseStream.Position}, Remaining bytes: {BaseStream.Length - BaseStream.Position}");
+                        throw new EndOfStreamException("Not enough data to read ASCII string.");
+                    }
+
+                    byte[] data = this.ReadBytes(length);
+                    Console.WriteLine($"ReadBytes for ASCII string: {data.Length} bytes, Stream position: {BaseStream.Position}");
+                    return new FString(Encoding.ASCII.GetString(data, 0, data.Length - 1), Encoding.ASCII);
                 }
             }
             else
             {
                 if (nameHeader.bIsWide)
                 {
-                    byte[] data = this.ReadBytes(nameHeader.Len * 2); // TODO: are we actually supposed to divide by two?
+                    if (BaseStream.Length - BaseStream.Position < nameHeader.Len * 2)
+                    {
+                        Console.WriteLine($"Stream length: {BaseStream.Length}, Current position: {BaseStream.Position}, Remaining bytes: {BaseStream.Length - BaseStream.Position}");
+                        throw new EndOfStreamException("Not enough data to read wide string.");
+                    }
+
+                    byte[] data = this.ReadBytes(nameHeader.Len * 2);
+                    Console.WriteLine($"ReadBytes for wide string: {data.Length} bytes, Stream position: {BaseStream.Position}");
                     return new FString(Encoding.Unicode.GetString(data, 0, data.Length), Encoding.Unicode);
                 }
                 else
                 {
+                    if (BaseStream.Length - BaseStream.Position < nameHeader.Len)
+                    {
+                        Console.WriteLine($"Stream length: {BaseStream.Length}, Current position: {BaseStream.Position}, Remaining bytes: {BaseStream.Length - BaseStream.Position}");
+                        throw new EndOfStreamException("Not enough data to read narrow string.");
+                    }
+
                     byte[] data = this.ReadBytes(nameHeader.Len);
+                    Console.WriteLine($"ReadBytes for narrow string: {data.Length} bytes, Stream position: {BaseStream.Position}");
                     return new FString(Encoding.ASCII.GetString(data, 0, data.Length), Encoding.ASCII);
                 }
             }
@@ -208,12 +256,12 @@ namespace UAssetAPI
                     {
                         var customVersionID = new Guid(ReadBytes(16));
                         var customVersionNumber = ReadInt32();
-                        newCustomVersionContainer.Add(new CustomVersion(customVersionID, customVersionNumber));                      
+                        newCustomVersionContainer.Add(new CustomVersion(customVersionID, customVersionNumber));
                         existingCustomVersions.Add(customVersionID);
                     }
                     break;
 
-            }    
+            }
 
             if (Mappings != null && Mappings.CustomVersionContainer != null && Mappings.CustomVersionContainer.Count > 0)
             {

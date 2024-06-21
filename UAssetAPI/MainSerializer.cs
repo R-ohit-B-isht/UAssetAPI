@@ -263,7 +263,7 @@ namespace UAssetAPI
         /// <param name="ancestry">The ancestry of the parent of this property.</param>
         /// <param name="parentName">The name of the parent class/struct of this property.</param>
         /// <param name="asset">The UnrealPackage which this property is contained within.</param>
-        /// <param name="reader">The BinaryReader to read from. If left unspecified, you must call the <see cref="PropertyData.Read(AssetBinaryReader, bool, long, long)"/> method manually.</param>
+        /// <param name="reader">The BinaryReader to read from. If left unspecified, you must call the <see cref="PropertyData.Read"/> method manually.</param>
         /// <param name="leng">The length of this property on disk in bytes.</param>
         /// <param name="duplicationIndex">The duplication index of this property.</param>
         /// <param name="includeHeader">Does this property serialize its header in the current context?</param>
@@ -331,7 +331,7 @@ namespace UAssetAPI
                 {
                     data.Read(reader, includeHeader, leng);
                 }
-                catch (Exception ex)
+                catch
                 {
                     // if asset is unversioned, bubble the error up to make the whole export fail
                     // because unversioned headers aren't properly reconstructed currently
@@ -344,7 +344,7 @@ namespace UAssetAPI
                     }
                     else
                     {
-                        throw ex;
+                        throw;
                     }
                 }
                 if (data.Offset == 0) data.Offset = startingOffset; // fallback
